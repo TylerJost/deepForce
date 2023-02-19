@@ -1,7 +1,7 @@
 clc
 clear
 
-files = dir('../data/raw');
+files = dir('../../data/raw');
 files = {files.name};
 filesClean = {};
 c = 1;
@@ -12,11 +12,11 @@ for file = 1:length(files)
     c = c + 1;
   end
 end
-
+disp(files)
 % For each file load in the force plate data
 for idx = 1:length(filesClean)
   fprintf('Iter %g / %g \n', idx, length(filesClean))
-  ForcePlateData = load(fullfile('..', 'data', 'raw', filesClean{1}), 'ForcePlateData', 'ForcePlateData');
+  ForcePlateData = load(fullfile('..', '..', 'data', 'raw', filesClean{idx}), 'ForcePlateData', 'ForcePlateData');
 
   fp = ForcePlateData.ForcePlateData;
   fpFields = fields(fp);
@@ -42,7 +42,7 @@ for idx = 1:length(filesClean)
   % Get proper name and save
   fileParts = split(filesClean{idx},'.mat');
   name = strcat(fileParts{1}, '.csv');
-  fullPathWrite = fullfile('..', 'data', 'interim', name);
+  fullPathWrite = fullfile('..', '..', 'data', 'interim', name);
   writetable(allFP, fullPathWrite);
 end
 
