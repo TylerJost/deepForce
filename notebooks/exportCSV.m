@@ -42,7 +42,7 @@ for idx = 1:length(filesClean)
   % Get proper name and save
   fileParts = split(filesClean{idx},'.mat');
   name = strcat(fileParts{1}, '.csv');
-  fullPathWrite = fullfile('..', 'data', 'processed', name);
+  fullPathWrite = fullfile('..', 'data', 'interim', name);
   writetable(allFP, fullPathWrite);
 end
 
