@@ -15,7 +15,6 @@ for subjectNum, massKg in zip(bw['subjectNums'], bw['massKg']):
 # %%
 fpFiles = list(Path('../../data/interim').iterdir())
 fpFiles = [fpFile for fpFile in fpFiles if str(fpFile).endswith('.csv')]
-fp = pd.read_csv(fpFiles[0])
 # %%
 class forcePlateCapture():
     def __init__(self, filePath):
@@ -27,15 +26,16 @@ class forcePlateCapture():
         self.trialNum = int(fParts[-1].split('.')[0])
 
         self.results = pd.read_csv(filePath)
+        self.shortenVariables()
+        print(self.cx2)
+        self.beginFrame, self.endFrame = self.trimResults(plotOn=False)
 
-        self.beginFrame, self.endFrame = self.trimResults(plot=False)
-
-        self.results = self.results.iloc[self.beginFrame, self.endFrame]
+        self.results = self.results.iloc[self.beginFrame:self.endFrame]
         self.shortenVariables()
 
     def trimResults(self, plotOn=True):
-        plate2_0 = np.logical_and(fp.cx2 == 0, fp.cy2 == 0)
-        plate3_0 = np.logical_and(fp.cx3 == 0, fp.cy3 == 0)
+        plate2_0 = np.logical_and(self.cx2 == 0, self.cy2 == 0)
+        plate3_0 = np.logical_and(self.cx3 == 0, self.cy3 == 0)
 
         both_0 = np.where(np.logical_and(plate2_0, plate3_0))[0]
 
@@ -46,23 +46,24 @@ class forcePlateCapture():
             if len(isMono[0])>0:
                 beginningIdx = isMono[0][0]
             else:
-                beginningIdx = len(fp.monoDiff)
-            beginFrame = fp.both_0[beginningIdx]+1
+                beginningIdx = len(monoDiff)
+            beginFrame = both_0[beginningIdx]+1
         else:
             beginFrame = 0
-        if len(both_0)>0 and both_0[-1] == len(fp.cx2)-1:
+        if len(both_0)>0 and both_0[-1] == len(self.cx2)-1:
             endingIdx = np.where(monoDiff>1)[0][-1]+1
-            endFrame = fp.both_0[endingIdx]-1
+            endFrame = self.both_0[endingIdx]-1
         else:
-            endFrame = len(fp.cx2)
+            endFrame = len(self.cx2)
+
         if plotOn == True:
             plt.subplot(121)
-            plt.plot(fp.cx2, linewidth=1.5)
-            plt.plot(fp.cx3, linewidth=1.5)
+            plt.plot(self.cx2, linewidth=1.5)
+            plt.plot(self.cx3, linewidth=1.5)
 
             plt.subplot(122)
-            plt.plot(fp.cx2[beginFrame:endFrame], linewidth=1.5)
-            plt.plot(fp.cx3[beginFrame:endFrame], linewidth=1.5)
+            plt.plot(self.cx2[beginFrame:endFrame], linewidth=1.5)
+            plt.plot(self.cx3[beginFrame:endFrame], linewidth=1.5)
 
         return beginFrame, endFrame
     def shortenVariables(self):
@@ -89,10 +90,13 @@ class forcePlateCapture():
         self.cx3 = np.array(self.results['Cx_mm-Plate3'])
         self.cy3 = np.array(self.results['Cy_mm-Plate3'])
         self.cz3 = np.array(self.results['Cz_mm-Plate3'])
+
     def plotMovement(self):
-        plt.scatter(self.cx2, self.cy2, c='gold')
-        plt.scatter(self.cx3, self.cy3, c='green')
-# %%
-fp = forcePlateCapture(fpFiles[7])
-fp.trimResults()
+        plt.scatter(self.cx2, self.cy2, c='gold', label = 'Force Plate 2')
+        plt.scatter(self.cx3, self.cy3, c='green', label = 'Force Plate 3')
+        plt.legend()
+
+fp = forcePlateCapture(fpFiles[4])
+fp.plotMovement()
+# self.trimResults()
 # %%
