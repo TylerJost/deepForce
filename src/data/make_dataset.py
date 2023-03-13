@@ -3,18 +3,17 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
-import scipy
+import pickle
+from tqdm import tqdm
+# import scipy
 # %%
 # Load bodyweights and convert to newtons in dictionary
-bw = pd.read_csv('../../data/external/bodyweight.csv', index_col = 0)
-bw.columns = ['subjectNums', 'massKg']
-bodyweights = {}
-for subjectNum, massKg in zip(bw['subjectNums'], bw['massKg']):
-    bodyweights[int(subjectNum)] = massKg*9.81
+# bw = pd.read_csv('../../data/external/bodyweight.csv', index_col = 0)
+# bw.columns = ['subjectNums', 'massKg']
+# bodyweights = {}
+# for subjectNum, massKg in zip(bw['subjectNums'], bw['massKg']):
+#     bodyweights[int(subjectNum)] = massKg*9.81
 
-# %%
-fpFiles = list(Path('../../data/interim').iterdir())
-fpFiles = [fpFile for fpFile in fpFiles if str(fpFile).endswith('.csv')]
 # %%
 class forcePlateCapture():
     def __init__(self, filePath):
@@ -27,7 +26,6 @@ class forcePlateCapture():
 
         self.results = pd.read_csv(filePath)
         self.shortenVariables()
-        print(self.cx2)
         self.beginFrame, self.endFrame = self.trimResults(plotOn=False)
 
         self.results = self.results.iloc[self.beginFrame:self.endFrame]
@@ -52,7 +50,7 @@ class forcePlateCapture():
             beginFrame = 0
         if len(both_0)>0 and both_0[-1] == len(self.cx2)-1:
             endingIdx = np.where(monoDiff>1)[0][-1]+1
-            endFrame = self.both_0[endingIdx]-1
+            endFrame = both_0[endingIdx]-1
         else:
             endFrame = len(self.cx2)
 
@@ -96,7 +94,21 @@ class forcePlateCapture():
         plt.scatter(self.cx3, self.cy3, c='green', label = 'Force Plate 3')
         plt.legend()
 
-fp = forcePlateCapture(fpFiles[4])
-fp.plotMovement()
+def writeData():
+    homePath = Path().parent.absolute().parents[1]
+    
+    fpFiles = list(Path(homePath / 'data/interim').iterdir())
+    assert len(fpFiles) > 0
+    fpFiles = [fpFile for fpFile in fpFiles if str(fpFile).endswith('.csv')]
+
+    fpData = []
+
+    for fpFile in tqdm(fpFiles):
+        fpData.append(forcePlateCapture(fpFile))
+
+    pickle.dump(fpData, open(homePath / 'data' / 'processed' / 'fpProcessed.pickle', "wb"))
+    
 # self.trimResults()
 # %%
+if __name__ == "__main__":
+    writeData()
