@@ -5,6 +5,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pickle
 from tqdm import tqdm
+
+from scipy import signal
 # import scipy
 # %%
 # Load bodyweights and convert to newtons in dictionary
@@ -26,12 +28,16 @@ class forcePlateCapture():
 
         self.results = pd.read_csv(filePath)
         self.shortenVariables()
-        self.beginFrame, self.endFrame = self.trimResults(plotOn=False)
-
+        try:
+            self.beginFrame, self.endFrame = self.trimResults(plotOn=True)
+        except:
+            self.beginFrame = 0
+            self.endFrame = len(self.cx2)
         self.results = self.results.iloc[self.beginFrame:self.endFrame]
         self.shortenVariables()
 
     def trimResults(self, plotOn=True):
+        plt.plot(self.cx2)
         plate2_0 = np.logical_and(self.cx2 == 0, self.cy2 == 0)
         plate3_0 = np.logical_and(self.cx3 == 0, self.cy3 == 0)
 
@@ -49,8 +55,13 @@ class forcePlateCapture():
         else:
             beginFrame = 0
         if len(both_0)>0 and both_0[-1] == len(self.cx2)-1:
-            endingIdx = np.where(monoDiff>1)[0][-1]+1
-            endFrame = both_0[endingIdx]-1
+            changeIdx = np.where(monoDiff>1)[0]
+            if len(changeIdx)>0:
+                endingIdx = [-1]+1
+                endFrame = both_0[endingIdx]-1
+            else:
+                endFrame = both_0[0]
+                print(f'Found one: {self.filePath}')
         else:
             endFrame = len(self.cx2)
 
@@ -104,11 +115,24 @@ def writeData():
     fpData = []
 
     for fpFile in tqdm(fpFiles):
+        # print(fpFile)
         fpData.append(forcePlateCapture(fpFile))
 
     pickle.dump(fpData, open(homePath / 'data' / 'processed' / 'fpProcessed.pickle', "wb"))
     
 # self.trimResults()
 # %%
-if __name__ == "__main__":
-    writeData()
+# if __name__ == "__main__":
+#     writeData()
+# %%
+fpFile = Path('/mnt/s/deepForce/data/interim/S22_STS_NI_SD_04.csv')
+
+x = forcePlateCapture(fpFile)
+# %%
+fs = 100
+fc = 5 # cutoff frequency
+w = fc / (fs / 2) # Normalize the frequency
+fs = 100
+b, a = signal.butter(5, w, 'low')
+output = signal.filtfilt(b, a, x.fz2)
+plt.plot(output)
